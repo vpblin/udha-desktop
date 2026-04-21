@@ -30,6 +30,10 @@ final class NotificationBus {
     private var mutedSessionsUntil: [UUID: Date] = [:]
     var focusedSessionID: UUID? { stateStore.focusedSessionID }
 
+    // Daily ElevenLabs spend guardrail.
+    private(set) var ttsCharactersSpokenToday: Int = 0
+    private var ttsBudgetDay: Date = Calendar.current.startOfDay(for: Date())
+
     init(stateStore: SessionStateStore, config: ConfigStore) {
         self.stateStore = stateStore
         self.config = config
@@ -37,6 +41,11 @@ final class NotificationBus {
 
     func shouldSpeak(_ request: VoiceRequest) -> Bool {
         let now = Date()
+        rolloverBudgetIfNeeded(now: now)
+        let budget = config.config.notifications.maxDailyTTSCharacters
+        if budget > 0 && ttsCharactersSpokenToday + request.text.count > budget {
+            return false
+        }
         if isGloballyMuted(now: now, urgency: request.urgency) {
             if !request.allowWhenMuted { return false }
         }
@@ -69,8 +78,18 @@ final class NotificationBus {
 
     func didSpeak(_ request: VoiceRequest) {
         let now = Date()
+        rolloverBudgetIfNeeded(now: now)
         lastGlobalSpeakAt = now
         if let sid = request.sessionID { lastPerSessionSpeakAt[sid] = now }
+        ttsCharactersSpokenToday += request.text.count
+    }
+
+    private func rolloverBudgetIfNeeded(now: Date) {
+        let today = Calendar.current.startOfDay(for: now)
+        if today != ttsBudgetDay {
+            ttsBudgetDay = today
+            ttsCharactersSpokenToday = 0
+        }
     }
 
     func muteAll(durationSec: Int) {
