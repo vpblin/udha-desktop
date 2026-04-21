@@ -2,26 +2,29 @@ import SwiftUI
 import Foundation
 
 enum OverlayTheme {
-    // Obsidian base — warm-toned, not neutral grey. Borrowed from instrument panels.
-    static let obsidianCore = Color(red: 0.055, green: 0.050, blue: 0.062)
-    static let obsidianRim  = Color(red: 0.115, green: 0.100, blue: 0.120)
-    static let obsidianEdge = Color(red: 0.020, green: 0.018, blue: 0.024)
+    // Translucent panel/card colors. The panel rides on top of .ultraThinMaterial,
+    // so these fills are intentionally faint — they mostly provide depth separation.
+    static let obsidianCore = Color.primary.opacity(0.02)
+    static let obsidianRim  = Color.primary.opacity(0.04)
+    static let obsidianEdge = Color.primary.opacity(0.015)
 
-    // Amber accent — the default "signal on" color. Warmer than gold, cooler than orange.
-    static let amber        = Color(red: 1.00,  green: 0.710, blue: 0.280)
-    static let amberGlow    = Color(red: 1.00,  green: 0.585, blue: 0.200)
+    // Accent — Apple's tintable blue. Used for brand text, hover highlights, and
+    // the "needs input" state color is kept amber for semantic clarity.
+    static let amber        = Color.orange
+    static let amberGlow    = Color.orange.opacity(0.85)
 
-    // Semantic signal colors. Each is tuned to sit well on the obsidian base.
-    static let stateWorking    = Color(red: 0.36, green: 0.88, blue: 1.00)   // electric cyan
-    static let stateNeedsInput = Color(red: 1.00, green: 0.710, blue: 0.28)  // amber
-    static let stateErrored    = Color(red: 1.00, green: 0.38, blue: 0.31)   // vermilion
-    static let stateCompleted  = Color(red: 0.56, green: 0.96, blue: 0.72)   // mint
-    static let stateIdle       = Color(red: 0.56, green: 0.56, blue: 0.62)   // slate
+    // Semantic signal colors — native system tints so they adapt to light/dark
+    // appearance and tint-by-accessibility.
+    static let stateWorking    = Color.blue
+    static let stateNeedsInput = Color.orange
+    static let stateErrored    = Color.red
+    static let stateCompleted  = Color.green
+    static let stateIdle       = Color.secondary
 
-    // Engraved hairlines, the fine details that sell the "real object" feel.
-    static let hairline       = Color.white.opacity(0.055)
-    static let hairlineStrong = Color.white.opacity(0.12)
-    static let innerShadow    = Color.black.opacity(0.55)
+    // Very subtle separators for light and dark mode alike.
+    static let hairline       = Color.primary.opacity(0.06)
+    static let hairlineStrong = Color.primary.opacity(0.14)
+    static let innerShadow    = Color.black.opacity(0.12)
 
     // Spring used everywhere — single cohesive motion language.
     static let bloomSpring = Animation.interpolatingSpring(

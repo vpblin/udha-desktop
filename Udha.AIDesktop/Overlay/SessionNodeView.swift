@@ -25,21 +25,18 @@ struct SessionNodeView: View {
             .animation(OverlayTheme.quickEase, value: hovered)
     }
 
-    /// Always-visible close button pinned inside the card's top-right corner.
-    /// Living inside `cardBody` (not the outer glow frame) guarantees it never
-    /// gets clipped by the panel edge even for extreme-angle pills.
+    /// Small close button pinned inside the card's top-right corner, styled
+    /// after macOS window traffic-light buttons. Subtle until hovered.
     private var removeButton: some View {
         Button(action: onRemove) {
-            Image(systemName: "xmark")
-                .font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.white.opacity(hovered ? 1.0 : 0.78))
-                .frame(width: 18, height: 18)
-                .background(
-                    Circle()
-                        .fill(OverlayTheme.stateErrored.opacity(hovered ? 0.95 : 0.7))
-                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 0.6))
-                )
-                .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
+            ZStack {
+                Circle()
+                    .fill(Color.primary.opacity(hovered ? 0.12 : 0.05))
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(hovered ? Color.red : .secondary)
+            }
+            .frame(width: 16, height: 16)
         }
         .buttonStyle(.plain)
         .help("Remove this session")
@@ -50,74 +47,43 @@ struct SessionNodeView: View {
     private var card: some View {
         let color = snapshot.state.signalColor
         return ZStack(alignment: .topTrailing) {
-            ambientGlow(color: color)
-            workingHalo(color: color)
+            attentionGlow(color: color)
             cardBody(color: color)
             cardContent(color: color)
-            // 12pt frame padding + 4pt inset → 16pt from outer frame corner.
             removeButton
-                .padding(.top, 16)
-                .padding(.trailing, 16)
+                .padding(.top, 14)
+                .padding(.trailing, 14)
         }
         .frame(width: cardWidth + 24, height: cardHeight + 24)
-        .scaleEffect(hovered ? 1.035 : 1.0)
+        .scaleEffect(hovered ? 1.015 : 1.0)
+        .animation(OverlayTheme.quickEase, value: hovered)
     }
 
-    private func ambientGlow(color: Color) -> some View {
-        let pulseBoost = snapshot.state.wantsPulse ? 0.28 * breath : 0
-        let base = hovered ? 0.55 : 0.22
-        return RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(color.opacity(base + pulseBoost))
-            .frame(width: cardWidth * 1.25, height: cardHeight * 1.55)
-            .blur(radius: hovered ? 22 : 16)
-            .allowsHitTesting(false)
-    }
-
+    /// Soft tinted halo behind the card — only visible for attention states
+    /// (needsInput, errored, crashed) so it doesn't add noise to the list.
     @ViewBuilder
-    private func workingHalo(color: Color) -> some View {
-        if snapshot.state == .working {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(
-                    AngularGradient(
-                        colors: [color.opacity(0), color, color.opacity(0.9), color.opacity(0)],
-                        center: .center,
-                        startAngle: .degrees(0),
-                        endAngle: .degrees(360)
-                    ),
-                    lineWidth: 1.4
-                )
-                .rotationEffect(.degrees(Double(marchPhase) * 360))
-                .frame(width: cardWidth + 6, height: cardHeight + 6)
+    private func attentionGlow(color: Color) -> some View {
+        if snapshot.state.wantsPulse {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(color.opacity(0.18 + 0.1 * breath))
+                .frame(width: cardWidth + 10, height: cardHeight + 10)
+                .blur(radius: 14)
+                .allowsHitTesting(false)
         }
     }
 
     private func cardBody(color: Color) -> some View {
-        let borderColor: Color = hovered ? color.opacity(0.85) : OverlayTheme.hairlineStrong
-        return RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(bodyFill)
+        let strokeColor: Color = hovered
+            ? color.opacity(0.55)
+            : Color.primary.opacity(0.08)
+        return RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(.thinMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [borderColor, Color.black.opacity(0.5)],
-                            startPoint: .top, endPoint: .bottom
-                        ),
-                        lineWidth: 0.9
-                    )
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(strokeColor, lineWidth: hovered ? 1.0 : 0.6)
             )
             .frame(width: cardWidth, height: cardHeight)
-            .shadow(color: .black.opacity(0.55), radius: 8, y: 3)
-    }
-
-    private var bodyFill: LinearGradient {
-        LinearGradient(
-            colors: [
-                OverlayTheme.obsidianRim,
-                OverlayTheme.obsidianCore,
-                OverlayTheme.obsidianEdge
-            ],
-            startPoint: .top, endPoint: .bottom
-        )
+            .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }
 
     // One type scale: display/13 for the name, display/11 for activity,
@@ -134,38 +100,36 @@ struct SessionNodeView: View {
     }
 
     private func topRow(color: Color) -> some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 8) {
             stateDot(color: color)
             Text(snapshot.label)
-                .font(OverlayTheme.display(13, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 4)
             autoApproveButton
             Text(elapsedReadout)
-                .font(OverlayTheme.mono(10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.72))
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.secondary)
         }
-        .padding(.trailing, 24) // reserve space for the × remove button
+        .padding(.trailing, 22) // reserve space for the × remove button
     }
 
     private var autoApproveButton: some View {
-        let tint = autoApprove ? OverlayTheme.amber : Color.white.opacity(0.45)
+        let tint: Color = autoApprove ? .orange : .secondary
         return Button(action: onToggleAutoApprove) {
             HStack(spacing: 3) {
                 Image(systemName: autoApprove ? "bolt.fill" : "bolt.slash")
-                    .font(.system(size: 9, weight: .bold))
-                Text("AUTO")
-                    .font(OverlayTheme.mono(9, weight: .bold))
-                    .tracking(0.5)
+                    .font(.system(size: 9, weight: .semibold))
+                Text("Auto")
+                    .font(.system(size: 10, weight: .semibold))
             }
             .foregroundStyle(tint)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1.5)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
             .background(
-                Capsule().fill(tint.opacity(autoApprove ? 0.18 : 0.06))
-                    .overlay(Capsule().stroke(tint.opacity(autoApprove ? 0.7 : 0.35), lineWidth: 0.6))
+                Capsule().fill(tint.opacity(autoApprove ? 0.15 : 0.08))
             )
         }
         .buttonStyle(.plain)
@@ -175,18 +139,17 @@ struct SessionNodeView: View {
     }
 
     private func stateRow(color: Color) -> some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             Text(stateLabel)
-                .font(OverlayTheme.mono(10, weight: .bold))
-                .tracking(0.6)
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(color)
             if let activity = activityText {
                 Circle()
-                    .fill(Color.white.opacity(0.22))
+                    .fill(Color.secondary.opacity(0.5))
                     .frame(width: 2, height: 2)
                 Text(activity)
-                    .font(OverlayTheme.display(11, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -197,22 +160,18 @@ struct SessionNodeView: View {
     private func meterRow(color: Color) -> some View {
         HStack(spacing: 8) {
             MeterBar(progress: meterProgress, color: color, segments: 14)
-                .frame(width: 86, height: 5)
+                .frame(width: 86, height: 4)
             Text(leftStat)
-                .font(OverlayTheme.mono(10, weight: .regular))
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.tertiary)
             Spacer(minLength: 0)
             if let badge = trailingBadge {
                 Text(badge.text)
-                    .font(OverlayTheme.mono(9, weight: .bold))
-                    .tracking(0.4)
+                    .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(badge.color)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1.5)
-                    .background(
-                        Capsule().fill(badge.color.opacity(0.14))
-                            .overlay(Capsule().stroke(badge.color.opacity(0.55), lineWidth: 0.6))
-                    )
+                    .background(Capsule().fill(badge.color.opacity(0.15)))
             }
         }
     }
@@ -221,34 +180,31 @@ struct SessionNodeView: View {
 
     private func stateDot(color: Color) -> some View {
         ZStack {
+            if snapshot.state.wantsPulse {
+                Circle()
+                    .fill(color.opacity(0.25 + 0.2 * breath))
+                    .frame(width: 14, height: 14)
+                    .blur(radius: 2)
+            }
             Circle()
-                .fill(color.opacity(snapshot.state.wantsPulse ? 0.42 + 0.4 * breath : 0.38))
-                .frame(width: 18, height: 18)
-                .blur(radius: 3.5)
-            Circle()
-                .fill(color)
-                .frame(width: 9, height: 9)
-                .shadow(color: color, radius: 3.5)
-            Circle()
-                .fill(Color.white.opacity(0.75))
-                .frame(width: 2.2, height: 2.2)
-                .offset(x: -1.4, y: -1.4)
+                .fill(color.gradient)
+                .frame(width: 8, height: 8)
         }
-        .frame(width: 18, height: 18)
+        .frame(width: 16, height: 16)
     }
 
     // MARK: - Derived text
 
     private var stateLabel: String {
         switch snapshot.state {
-        case .working:     return "RUNNING"
-        case .needsInput:  return "NEEDS INPUT"
-        case .errored:     return "ERROR"
-        case .crashed:     return "CRASHED"
-        case .completed:   return "DONE"
-        case .starting:    return "STARTING"
-        case .idle:        return "IDLE"
-        case .exited:      return "EXITED"
+        case .working:     return "Running"
+        case .needsInput:  return "Needs input"
+        case .errored:     return "Error"
+        case .crashed:     return "Crashed"
+        case .completed:   return "Done"
+        case .starting:    return "Starting"
+        case .idle:        return "Idle"
+        case .exited:      return "Exited"
         }
     }
 

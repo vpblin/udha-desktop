@@ -167,61 +167,49 @@ struct EdgeOverlayView: View {
     private var bloomBackground: some View {
         ZStack {
             Rectangle()
-                .fill(.regularMaterial)
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            OverlayTheme.obsidianCore.opacity(0.95),
-                            OverlayTheme.obsidianEdge.opacity(0.98)
-                        ],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                )
-            // Hairline along the inward edge.
-            HStack {
+                .fill(.ultraThinMaterial)
+            // Hairline along the inward edge for that clean panel-attached feel.
+            HStack(spacing: 0) {
                 if edge == .right {
                     Rectangle()
                         .fill(OverlayTheme.hairlineStrong)
-                        .frame(width: 0.6)
-                    Spacer()
+                        .frame(width: 0.5)
+                    Spacer(minLength: 0)
                 } else {
-                    Spacer()
+                    Spacer(minLength: 0)
                     Rectangle()
                         .fill(OverlayTheme.hairlineStrong)
-                        .frame(width: 0.6)
+                        .frame(width: 0.5)
                 }
             }
         }
-        .shadow(color: .black.opacity(0.5), radius: 22, x: edge == .right ? -10 : 10, y: 0)
+        .shadow(color: .black.opacity(0.15), radius: 18, x: edge == .right ? -6 : 6, y: 0)
         .allowsHitTesting(false)
     }
 
     private var headerBar: some View {
         let activeCount = sessions.filter { $0.state == .working }.count
         let needsCount = sessions.filter { $0.state == .needsInput }.count
-        return HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("UDHA")
-                    .font(OverlayTheme.display(13, weight: .heavy))
-                    .tracking(2.5)
-                    .foregroundStyle(OverlayTheme.amber)
+        return HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Udha")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
                 Text(statusReadout(active: activeCount, needs: needsCount))
-                    .font(OverlayTheme.mono(10, weight: .bold))
-                    .tracking(0.5)
-                    .foregroundStyle(hasAttention ? OverlayTheme.amber : .white.opacity(0.72))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(hasAttention ? OverlayTheme.stateNeedsInput : .secondary)
             }
             Spacer()
             headerControl(
                 glyph: core.voice.isListening ? "mic.fill" : "mic",
-                tint: core.voice.isListening ? OverlayTheme.stateErrored : .white,
+                tint: core.voice.isListening ? OverlayTheme.stateErrored : .primary,
                 action: { core.voice.toggle() }
             )
-            headerControl(glyph: "plus", tint: .white, action: openNewSession)
-            headerControl(glyph: "gearshape", tint: .white, action: openSettings)
+            headerControl(glyph: "plus", tint: .primary, action: openNewSession)
+            headerControl(glyph: "gearshape", tint: .primary, action: openSettings)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     private func headerControl(glyph: String, tint: Color, action: @escaping () -> Void) -> some View {
@@ -229,10 +217,10 @@ struct EdgeOverlayView: View {
     }
 
     private func statusReadout(active: Int, needs: Int) -> String {
-        if needs > 0 { return "\(needs) WAIT" }
-        if active > 0 { return "\(active) RUN" }
-        if sessions.isEmpty { return "IDLE" }
-        return "\(sessions.count) OK"
+        if needs > 0 { return "\(needs) waiting" }
+        if active > 0 { return "\(active) running" }
+        if sessions.isEmpty { return "Idle" }
+        return "\(sessions.count) sessions"
     }
 
     private var sessionList: some View {
@@ -407,18 +395,16 @@ private struct HeaderControlButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(OverlayTheme.obsidianCore)
-                    .overlay(Circle().stroke(
-                        hovering ? OverlayTheme.amber.opacity(0.65) : OverlayTheme.hairlineStrong,
-                        lineWidth: 0.8
-                    ))
-                    .shadow(color: .black.opacity(0.4), radius: 4)
+                    .fill(hovering ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
+                    .overlay(
+                        Circle().stroke(Color.primary.opacity(hovering ? 0.2 : 0.1), lineWidth: 0.5)
+                    )
                 Image(systemName: glyph)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(hovering ? OverlayTheme.amber : tint.opacity(0.9))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .symbolRenderingMode(.hierarchical)
             }
-            .frame(width: 32, height: 32)
-            .scaleEffect(hovering ? 1.08 : 1.0)
+            .frame(width: 30, height: 30)
             .animation(OverlayTheme.quickEase, value: hovering)
         }
         .buttonStyle(.plain)
