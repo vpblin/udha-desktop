@@ -25,16 +25,16 @@ struct SessionNodeView: View {
             .animation(OverlayTheme.quickEase, value: hovered)
     }
 
-    /// Small close button pinned inside the card's top-right corner, styled
-    /// after macOS window traffic-light buttons. Subtle until hovered.
+    /// Small close button pinned inside the card's top-right corner. Subtle
+    /// until hovered, then goes full red like a macOS traffic-light button.
     private var removeButton: some View {
         Button(action: onRemove) {
             ZStack {
                 Circle()
-                    .fill(Color.primary.opacity(hovered ? 0.12 : 0.05))
+                    .fill(hovered ? Color.red : Color.white.opacity(0.08))
                 Image(systemName: "xmark")
                     .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(hovered ? Color.red : .secondary)
+                    .foregroundStyle(hovered ? .white : .white.opacity(0.55))
             }
             .frame(width: 16, height: 16)
         }
@@ -75,15 +75,15 @@ struct SessionNodeView: View {
     private func cardBody(color: Color) -> some View {
         let strokeColor: Color = hovered
             ? color.opacity(0.55)
-            : Color.primary.opacity(0.08)
-        return RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(.thinMaterial)
+            : Color.white.opacity(0.08)
+        return RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(hovered ? OverlayTheme.cardBGHover : OverlayTheme.cardBG)
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(strokeColor, lineWidth: hovered ? 1.0 : 0.6)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(strokeColor, lineWidth: hovered ? 1.0 : 0.5)
             )
             .frame(width: cardWidth, height: cardHeight)
-            .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+            .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
     }
 
     // One type scale: display/13 for the name, display/11 for activity,
@@ -104,20 +104,20 @@ struct SessionNodeView: View {
             stateDot(color: color)
             Text(snapshot.label)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 4)
             autoApproveButton
             Text(elapsedReadout)
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.55))
         }
         .padding(.trailing, 22) // reserve space for the × remove button
     }
 
     private var autoApproveButton: some View {
-        let tint: Color = autoApprove ? .orange : .secondary
+        let tint: Color = autoApprove ? OverlayTheme.amber : Color.white.opacity(0.45)
         return Button(action: onToggleAutoApprove) {
             HStack(spacing: 3) {
                 Image(systemName: autoApprove ? "bolt.fill" : "bolt.slash")
@@ -129,7 +129,7 @@ struct SessionNodeView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                Capsule().fill(tint.opacity(autoApprove ? 0.15 : 0.08))
+                Capsule().fill(autoApprove ? OverlayTheme.amber.opacity(0.15) : Color.white.opacity(0.08))
             )
         }
         .buttonStyle(.plain)
@@ -145,11 +145,11 @@ struct SessionNodeView: View {
                 .foregroundStyle(color)
             if let activity = activityText {
                 Circle()
-                    .fill(Color.secondary.opacity(0.5))
+                    .fill(Color.white.opacity(0.3))
                     .frame(width: 2, height: 2)
                 Text(activity)
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
@@ -163,7 +163,7 @@ struct SessionNodeView: View {
                 .frame(width: 86, height: 4)
             Text(leftStat)
                 .font(.system(size: 10, design: .monospaced))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.white.opacity(0.45))
             Spacer(minLength: 0)
             if let badge = trailingBadge {
                 Text(badge.text)
@@ -171,7 +171,7 @@ struct SessionNodeView: View {
                     .foregroundStyle(badge.color)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1.5)
-                    .background(Capsule().fill(badge.color.opacity(0.15)))
+                    .background(Capsule().fill(badge.color.opacity(0.18)))
             }
         }
     }

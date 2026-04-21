@@ -167,8 +167,8 @@ struct EdgeOverlayView: View {
     private var bloomBackground: some View {
         ZStack {
             Rectangle()
-                .fill(.ultraThinMaterial)
-            // Hairline along the inward edge for that clean panel-attached feel.
+                .fill(OverlayTheme.panelBG)
+            // Hairline along the inward edge for panel-attached crispness.
             HStack(spacing: 0) {
                 if edge == .right {
                     Rectangle()
@@ -183,7 +183,7 @@ struct EdgeOverlayView: View {
                 }
             }
         }
-        .shadow(color: .black.opacity(0.15), radius: 18, x: edge == .right ? -6 : 6, y: 0)
+        .shadow(color: .black.opacity(0.4), radius: 20, x: edge == .right ? -8 : 8, y: 0)
         .allowsHitTesting(false)
     }
 
@@ -194,19 +194,19 @@ struct EdgeOverlayView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Udha")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 Text(statusReadout(active: activeCount, needs: needsCount))
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(hasAttention ? OverlayTheme.stateNeedsInput : .secondary)
+                    .foregroundStyle(hasAttention ? OverlayTheme.stateNeedsInput : .white.opacity(0.55))
             }
             Spacer()
             headerControl(
                 glyph: core.voice.isListening ? "mic.fill" : "mic",
-                tint: core.voice.isListening ? OverlayTheme.stateErrored : .primary,
+                tint: core.voice.isListening ? OverlayTheme.stateErrored : .white,
                 action: { core.voice.toggle() }
             )
-            headerControl(glyph: "plus", tint: .primary, action: openNewSession)
-            headerControl(glyph: "gearshape", tint: .primary, action: openSettings)
+            headerControl(glyph: "plus", tint: .white, action: openNewSession)
+            headerControl(glyph: "gearshape", tint: .white, action: openSettings)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -395,14 +395,13 @@ private struct HeaderControlButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(hovering ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
+                    .fill(hovering ? Color.white.opacity(0.14) : Color.white.opacity(0.07))
                     .overlay(
-                        Circle().stroke(Color.primary.opacity(hovering ? 0.2 : 0.1), lineWidth: 0.5)
+                        Circle().stroke(Color.white.opacity(hovering ? 0.22 : 0.12), lineWidth: 0.5)
                     )
                 Image(systemName: glyph)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(tint)
-                    .symbolRenderingMode(.hierarchical)
             }
             .frame(width: 30, height: 30)
             .animation(OverlayTheme.quickEase, value: hovering)

@@ -2,29 +2,32 @@ import SwiftUI
 import Foundation
 
 enum OverlayTheme {
-    // Translucent panel/card colors. The panel rides on top of .ultraThinMaterial,
-    // so these fills are intentionally faint — they mostly provide depth separation.
-    static let obsidianCore = Color.primary.opacity(0.02)
-    static let obsidianRim  = Color.primary.opacity(0.04)
-    static let obsidianEdge = Color.primary.opacity(0.015)
+    // Opaque dark panel palette — Raycast/Arc-style. Fixed (not adaptive) so
+    // contrast is predictable regardless of what's showing behind the panel.
+    static let panelBG      = Color(red: 0.106, green: 0.106, blue: 0.117)    // #1B1B1E
+    static let cardBG       = Color(red: 0.149, green: 0.149, blue: 0.165)    // #26262A
+    static let cardBGHover  = Color(red: 0.180, green: 0.180, blue: 0.196)    // #2E2E32
 
-    // Accent — Apple's tintable blue. Used for brand text, hover highlights, and
-    // the "needs input" state color is kept amber for semantic clarity.
-    static let amber        = Color.orange
-    static let amberGlow    = Color.orange.opacity(0.85)
+    // Legacy aliases kept so other call-sites don't break. Map to the new palette.
+    static let obsidianCore = cardBG
+    static let obsidianRim  = cardBGHover
+    static let obsidianEdge = panelBG
 
-    // Semantic signal colors — native system tints so they adapt to light/dark
-    // appearance and tint-by-accessibility.
-    static let stateWorking    = Color.blue
-    static let stateNeedsInput = Color.orange
-    static let stateErrored    = Color.red
-    static let stateCompleted  = Color.green
-    static let stateIdle       = Color.secondary
+    // Accent — vivid SF orange, used for brand + needs-input.
+    static let amber        = Color(red: 1.00, green: 0.584, blue: 0.00)      // systemOrange-ish
+    static let amberGlow    = Color(red: 1.00, green: 0.521, blue: 0.184)
 
-    // Very subtle separators for light and dark mode alike.
-    static let hairline       = Color.primary.opacity(0.06)
-    static let hairlineStrong = Color.primary.opacity(0.14)
-    static let innerShadow    = Color.black.opacity(0.12)
+    // Semantic signal colors — bright enough to pop on the dark panel.
+    static let stateWorking    = Color(red: 0.369, green: 0.651, blue: 1.00)  // systemBlue
+    static let stateNeedsInput = Color(red: 1.00,  green: 0.584, blue: 0.00)  // systemOrange
+    static let stateErrored    = Color(red: 1.00,  green: 0.373, blue: 0.333) // systemRed
+    static let stateCompleted  = Color(red: 0.298, green: 0.850, blue: 0.392) // systemGreen
+    static let stateIdle       = Color(red: 0.557, green: 0.557, blue: 0.580) // systemGray
+
+    // Separators tuned for the dark panel.
+    static let hairline       = Color.white.opacity(0.06)
+    static let hairlineStrong = Color.white.opacity(0.14)
+    static let innerShadow    = Color.black.opacity(0.35)
 
     // Spring used everywhere — single cohesive motion language.
     static let bloomSpring = Animation.interpolatingSpring(
