@@ -18,46 +18,46 @@ struct SessionNodeView: View {
     private let cardHeight: CGFloat = 82
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            card
-            if hovered { removeButton }
-        }
-        .frame(width: cardWidth + 24, height: cardHeight + 24)
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .onHover { onHover($0) }
-        .onTapGesture { onClick() }
-        .animation(OverlayTheme.quickEase, value: hovered)
+        card
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .onHover { onHover($0) }
+            .onTapGesture { onClick() }
+            .animation(OverlayTheme.quickEase, value: hovered)
     }
 
+    /// Always-visible close button pinned inside the card's top-right corner.
+    /// Living inside `cardBody` (not the outer glow frame) guarantees it never
+    /// gets clipped by the panel edge even for extreme-angle pills.
     private var removeButton: some View {
         Button(action: onRemove) {
             Image(systemName: "xmark")
                 .font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white.opacity(hovered ? 1.0 : 0.78))
                 .frame(width: 18, height: 18)
                 .background(
                     Circle()
-                        .fill(OverlayTheme.stateErrored.opacity(0.85))
+                        .fill(OverlayTheme.stateErrored.opacity(hovered ? 0.95 : 0.7))
                         .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 0.6))
                 )
                 .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
         }
         .buttonStyle(.plain)
         .help("Remove this session")
-        .padding(.top, 6)
-        .padding(.trailing, 6)
-        .transition(.scale(scale: 0.7).combined(with: .opacity))
     }
 
     // MARK: - Card
 
     private var card: some View {
         let color = snapshot.state.signalColor
-        return ZStack {
+        return ZStack(alignment: .topTrailing) {
             ambientGlow(color: color)
             workingHalo(color: color)
             cardBody(color: color)
             cardContent(color: color)
+            // 12pt frame padding + 4pt inset → 16pt from outer frame corner.
+            removeButton
+                .padding(.top, 16)
+                .padding(.trailing, 16)
         }
         .frame(width: cardWidth + 24, height: cardHeight + 24)
         .scaleEffect(hovered ? 1.035 : 1.0)
@@ -147,6 +147,7 @@ struct SessionNodeView: View {
                 .font(OverlayTheme.mono(10, weight: .medium))
                 .foregroundStyle(.white.opacity(0.72))
         }
+        .padding(.trailing, 24) // reserve space for the × remove button
     }
 
     private var autoApproveButton: some View {

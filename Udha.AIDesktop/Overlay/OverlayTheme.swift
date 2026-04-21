@@ -86,12 +86,19 @@ struct OverlayGeometry {
 
     /// Radius at which session nodes are placed.
     /// Grows aggressively with session count so the pills don't overlap at
-    /// high counts. Capped so the widest card still fits in the 460-wide panel.
+    /// high counts. Capped so the widest card still fits horizontally AND
+    /// the top/bottom cards don't run off the screen vertically.
     var nodeRadius: CGFloat {
         let base: CGFloat = 230
         let extra: CGFloat = CGFloat(max(0, nodeCount - 3)) * 18
-        let ceiling = min(panelSize.width - 78, 340)
-        return min(base + extra, ceiling)
+        // Card needs ~124pt of horizontal clearance from the panel's inner edge;
+        // at angle π the card's left edge = panelWidth - R - 124. Keep ≥16pt margin.
+        let widthCeiling = panelSize.width - 140
+        // Vertically, top/bottom pills sit at y = arcCenter.y ± R. Keep ~65pt
+        // of margin (half card height + breathing room) so they aren't clipped.
+        let heightCeiling = panelSize.height / 2 - 65
+        let hardCap: CGFloat = 300
+        return min(base + extra, min(widthCeiling, heightCeiling, hardCap))
     }
 
     /// Arc spread (radians). Base 62°, up to a full 180° once there are ~7 sessions.
