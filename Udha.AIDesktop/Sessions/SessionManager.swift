@@ -15,6 +15,7 @@ final class SessionManager: ObservableObject {
     private var summaryTimers: [UUID: DispatchSourceTimer] = [:]
     private var quietTimers: [UUID: DispatchSourceTimer] = [:]
     private var pendingClassification: [UUID: (state: SessionState, seenAt: Date)] = [:]
+    private var lastAutoApproveAt: [UUID: Date] = [:]
 
     init(stateStore: SessionStateStore, classifier: HaikuClassifier, config: ConfigStore, activity: ActivityLog) {
         self.stateStore = stateStore
@@ -233,7 +234,16 @@ final class SessionManager: ObservableObject {
     private func maybeAutoApprove(id: UUID, prompt: PendingPrompt) {
         guard !prompt.isDestructive else { return }
         guard let cfg = config.config.sessions.first(where: { $0.id == id }), cfg.autoApprove else { return }
+        // Cooldown: don't re-fire within 3s of a prior auto-approve for this
+        // session. After we send "1"/"y", the tmux pane still contains the
+        // old prompt footer for a tick or two — without this, the classifier
+        // re-matches and we inject extra keystrokes into Claude's next input.
+        if let last = lastAutoApproveAt[id], Date().timeIntervalSince(last) < 3.0 {
+            Log.classify.info("auto-approve cooldown skipped for \(cfg.label)")
+            return
+        }
         let delivered = deliverApprove(style: prompt.style, sessionID: id)
+        lastAutoApproveAt[id] = Date()
         activity.record(.approvePrompt(sessionID: id, promptText: prompt.text))
         Log.classify.info("auto-approved prompt for \(cfg.label): \(delivered)")
     }
