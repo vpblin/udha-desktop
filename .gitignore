@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+Package.resolved
+
+# CocoaPods (unused but kept for safety)
+Pods/
+
+# Profiling artifacts
+*.profraw
+*.profdata
+
+# Local Claude Code settings (machine-specific)
+.claude/
+CLAUDE.md
+
+# Logs
+*.log
