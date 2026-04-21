@@ -142,6 +142,8 @@ enum BuiltInVoices {
         ElevenLabsVoice(voice_id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", category: "Premade", description: "Strong female, American"),
         ElevenLabsVoice(voice_id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli", category: "Premade", description: "Emotional female, American"),
         ElevenLabsVoice(voice_id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", category: "Premade", description: "Deep male, American"),
+        ElevenLabsVoice(voice_id: "onwK4e9ZLuTAKqWW03F9", name: "Daniel", category: "Premade", description: "Authoritative male, British — the Jarvis voice"),
+        ElevenLabsVoice(voice_id: "JBFqnCBsd6RMkjVDRZzb", name: "George", category: "Premade", description: "Warm male, British — BBC narrator"),
         ElevenLabsVoice(voice_id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", category: "Premade", description: "Calm female, American — narration"),
         ElevenLabsVoice(voice_id: "yoZ06aMxZJJ28mfd3POQ", name: "Sam", category: "Premade", description: "Raspy male, American"),
         ElevenLabsVoice(voice_id: "LZAcK8Cx5QjdQhfBsJQZ", name: "Udha Default", category: "Custom", description: "The voice shipped with Udha")
