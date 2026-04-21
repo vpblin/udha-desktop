@@ -385,9 +385,10 @@ struct EdgeOverlayView: View {
     private var footerControls: some View {
         let geom = OverlayGeometry(edge: edge, panelSize: panelSize, nodeCount: 0)
         let center = geom.arcCenter
-        // Stack the tray of controls vertically along the disc axis, inside the rim.
-        let trayX: CGFloat = edge == .right ? center.x - 44 : center.x + 44
-        let trayY: CGFloat = center.y + geom.nodeRadius + 20
+        // Sit directly under the UDHA badge — same x as the badge, just below it.
+        let badgeInset: CGFloat = 72 / 2 + 6
+        let trayX: CGFloat = edge == .right ? center.x - badgeInset : center.x + badgeInset
+        let trayY: CGFloat = center.y + 72 / 2 + 34
         let items: [FooterControl] = [
             FooterControl(
                 glyph: core.voice.isListening ? "mic.fill" : "mic",
@@ -397,19 +398,19 @@ struct EdgeOverlayView: View {
             FooterControl(glyph: "plus", action: { openNewSession() }, tint: .white),
             FooterControl(glyph: "gearshape", action: { openSettings() }, tint: .white)
         ]
-        return HStack(spacing: 8) {
+        return HStack(spacing: 12) {
             ForEach(Array(items.enumerated()), id: \.offset) { (_, item) in
                 FooterControlButton(item: item)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
         .background(
             Capsule()
-                .fill(OverlayTheme.obsidianEdge.opacity(0.88))
-                .overlay(Capsule().stroke(OverlayTheme.hairlineStrong, lineWidth: 0.5))
+                .fill(OverlayTheme.obsidianEdge.opacity(0.9))
+                .overlay(Capsule().stroke(OverlayTheme.hairlineStrong, lineWidth: 0.6))
         )
-        .shadow(color: .black.opacity(0.4), radius: 6)
+        .shadow(color: .black.opacity(0.45), radius: 8, y: 3)
         .position(x: trayX, y: trayY)
     }
 
@@ -547,10 +548,10 @@ private struct FooterControlButton: View {
                     ))
                     .shadow(color: .black.opacity(0.4), radius: 4)
                 Image(systemName: item.glyph)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(hovering ? OverlayTheme.amber : item.tint.opacity(0.85))
             }
-            .frame(width: 28, height: 28)
+            .frame(width: 38, height: 38)
             .scaleEffect(hovering ? 1.08 : 1.0)
             .animation(OverlayTheme.quickEase, value: hovering)
         }

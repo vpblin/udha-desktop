@@ -85,20 +85,20 @@ struct OverlayGeometry {
     }
 
     /// Radius at which session nodes are placed.
-    /// Grows with session count so the pills don't squash into each other on
-    /// busy days — capped so the disc still fits inside the 460-wide panel.
+    /// Grows aggressively with session count so the pills don't overlap at
+    /// high counts. Capped so the widest card still fits in the 460-wide panel.
     var nodeRadius: CGFloat {
         let base: CGFloat = 230
-        let extra: CGFloat = CGFloat(max(0, nodeCount - 4)) * 14
-        let ceiling = min(panelSize.width - 78, 320)
+        let extra: CGFloat = CGFloat(max(0, nodeCount - 3)) * 18
+        let ceiling = min(panelSize.width - 78, 340)
         return min(base + extra, ceiling)
     }
 
-    /// Arc spread (radians) — also grows with session count. Base 62°, up to ~165°.
+    /// Arc spread (radians). Base 62°, up to a full 180° once there are ~7 sessions.
     var arcSpread: Double {
         let base = Double.pi * 0.62
-        let extra = Double.pi * 0.08 * Double(max(0, nodeCount - 4))
-        return min(base + extra, Double.pi * 0.92)
+        let extra = Double.pi * 0.12 * Double(max(0, nodeCount - 3))
+        return min(base + extra, Double.pi)
     }
 
     /// Angle (radians) for node at index — opens inward from the edge.
