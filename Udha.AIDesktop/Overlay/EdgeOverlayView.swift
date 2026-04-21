@@ -157,11 +157,35 @@ struct EdgeOverlayView: View {
             bloomBackground
             VStack(spacing: 0) {
                 headerBar
+                if core.voice.isListening {
+                    voiceStatusBar
+                }
                 Divider().background(OverlayTheme.hairline)
                 sessionList
             }
         }
         .frame(width: panelSize.width, height: panelSize.height)
+    }
+
+    /// Slim banner under the header that appears whenever voice is on. Gives
+    /// an unmistakable "the mic is live" cue — a pulsing dot plus the status
+    /// text the controller is publishing ("Connecting…" / "Listening" / etc.).
+    private var voiceStatusBar: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 7, height: 7)
+                .opacity(0.55 + 0.45 * breath)
+                .shadow(color: Color.red.opacity(0.6), radius: 4)
+            Text(core.voice.statusMessage)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.82))
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 7)
+        .background(Color.red.opacity(0.08))
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
     private var bloomBackground: some View {
@@ -200,11 +224,7 @@ struct EdgeOverlayView: View {
                     .foregroundStyle(hasAttention ? OverlayTheme.stateNeedsInput : .white.opacity(0.55))
             }
             Spacer()
-            headerControl(
-                glyph: core.voice.isListening ? "mic.fill" : "mic",
-                tint: core.voice.isListening ? OverlayTheme.stateErrored : .white,
-                action: { core.voice.toggle() }
-            )
+            micButton
             headerControl(glyph: "plus", tint: .white, action: openNewSession)
             headerControl(glyph: "gearshape", tint: .white, action: openSettings)
         }
@@ -214,6 +234,29 @@ struct EdgeOverlayView: View {
 
     private func headerControl(glyph: String, tint: Color, action: @escaping () -> Void) -> some View {
         HeaderControlButton(glyph: glyph, tint: tint, action: action)
+    }
+
+    /// Mic button with a live-state ring — two expanding circles pulse out
+    /// while voice is on, like a FaceTime/Zoom in-call indicator. No ambiguity
+    /// about whether the mic is actually engaged.
+    private var micButton: some View {
+        ZStack {
+            if core.voice.isListening {
+                ForEach(0..<2, id: \.self) { i in
+                    Circle()
+                        .stroke(Color.red.opacity(0.6 - 0.3 * Double(i)), lineWidth: 1.2)
+                        .frame(width: 30 + CGFloat(i) * 10 + 18 * breath,
+                               height: 30 + CGFloat(i) * 10 + 18 * breath)
+                        .opacity(1 - breath)
+                }
+            }
+            HeaderControlButton(
+                glyph: core.voice.isListening ? "mic.fill" : "mic",
+                tint: core.voice.isListening ? Color.red : .white,
+                action: { core.voice.toggle() }
+            )
+        }
+        .frame(width: 30, height: 30)
     }
 
     private func statusReadout(active: Int, needs: Int) -> String {

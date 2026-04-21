@@ -146,29 +146,70 @@ struct SettingsView: View {
 
     private var voiceTab: some View {
         Form {
-            Picker("Voice", selection: $config.config.voice.elevenLabsVoiceID) {
-                if voices.isEmpty {
-                    Text(config.config.voice.elevenLabsVoiceID).tag(config.config.voice.elevenLabsVoiceID)
-                } else {
-                    ForEach(voices) { v in Text(v.name).tag(v.voice_id) }
+            Section("Voice") {
+                Picker("Name", selection: $config.config.voice.elevenLabsVoiceID) {
+                    Section("Built-in") {
+                        ForEach(BuiltInVoices.all) { v in
+                            Text(v.name).tag(v.voice_id)
+                        }
+                    }
+                    if !customVoices.isEmpty {
+                        Section("From your ElevenLabs account") {
+                            ForEach(customVoices) { v in Text(v.name).tag(v.voice_id) }
+                        }
+                    }
+                    // Keep an entry for whatever's currently saved so the picker
+                    // never renders a blank selection for a custom voice ID.
+                    if !BuiltInVoices.all.contains(where: { $0.voice_id == config.config.voice.elevenLabsVoiceID }),
+                       !customVoices.contains(where: { $0.voice_id == config.config.voice.elevenLabsVoiceID }),
+                       !config.config.voice.elevenLabsVoiceID.isEmpty {
+                        Text(config.config.voice.elevenLabsVoiceID).tag(config.config.voice.elevenLabsVoiceID)
+                    }
+                }
+                if let v = BuiltInVoices.all.first(where: { $0.voice_id == config.config.voice.elevenLabsVoiceID }),
+                   let desc = v.description {
+                    Text(desc).font(.caption).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Button("Preview voice") { Task { await previewVoice() } }
+                    Button("Load my voices") { Task { await loadVoices() } }
+                    Spacer()
                 }
             }
-            Button("Load voices") { Task { await loadVoices() } }
-            Picker("TTS Model", selection: $config.config.voice.ttsModel) {
-                Text("Flash v2.5 (fastest)").tag("eleven_flash_v2_5")
-                Text("Turbo v2.5").tag("eleven_turbo_v2_5")
-                Text("Multilingual v2").tag("eleven_multilingual_v2")
+            Section("Model & level") {
+                Picker("TTS Model", selection: $config.config.voice.ttsModel) {
+                    Text("Flash v2.5 (fastest)").tag("eleven_flash_v2_5")
+                    Text("Turbo v2.5").tag("eleven_turbo_v2_5")
+                    Text("Multilingual v2").tag("eleven_multilingual_v2")
+                }
+                Slider(value: $config.config.voice.volume, in: 0...1) { Text("Volume") }
             }
-            Slider(value: $config.config.voice.volume, in: 0...1) { Text("Volume") }
-            TextField("Agent ID", text: $agentID)
-            Button("Save agent ID") {
-                config.mutate { $0.voice.elevenLabsAgentID = agentID }
-                try? keychain.set(agentID, for: .elevenLabsAgentID)
-                message = "Saved."
+            Section("Conversational agent") {
+                TextField("Agent ID", text: $agentID)
+                Button("Save agent ID") {
+                    config.mutate { $0.voice.elevenLabsAgentID = agentID }
+                    try? keychain.set(agentID, for: .elevenLabsAgentID)
+                    message = "Saved."
+                }
             }
             if !message.isEmpty { Text(message).font(.caption).foregroundStyle(.secondary) }
         }
         .padding()
+    }
+
+    private var customVoices: [ElevenLabsVoice] {
+        voices.filter { v in !BuiltInVoices.all.contains(where: { $0.voice_id == v.voice_id }) }
+    }
+
+    private func previewVoice() async {
+        do {
+            let name = BuiltInVoices.all.first(where: { $0.voice_id == config.config.voice.elevenLabsVoiceID })?.name ?? "there"
+            let pcm = try await tts.streamingTTS(text: "Hi, this is \(name). How do I sound?")
+            AudioPlayer.shared.enqueuePCM16(pcm)
+            message = "Playing preview…"
+        } catch {
+            message = "Preview failed: \(error.localizedDescription)"
+        }
     }
 
     private var keysTab: some View {

@@ -84,7 +84,13 @@ final class AppCore {
         )
         self.conversational = conversational
 
-        let voice = VoiceController(agent: conversational, proactive: proactive)
+        let voice = VoiceController(
+            agent: conversational,
+            proactive: proactive,
+            stateStore: stateStore,
+            config: config,
+            tts: elevenLabs
+        )
         self.voice = voice
 
         let slack = SlackManager(

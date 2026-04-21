@@ -123,9 +123,27 @@ struct ElevenLabsVoice: Codable, Hashable, Identifiable {
     var voice_id: String
     var name: String
     var category: String?
+    var description: String?
     var id: String { voice_id }
 }
 
 struct VoicesResponse: Codable {
     var voices: [ElevenLabsVoice]
+}
+
+/// Curated built-in voices from the ElevenLabs default library. Shown in the
+/// picker immediately so users don't need to hit "Load voices" to see anything.
+enum BuiltInVoices {
+    static let all: [ElevenLabsVoice] = [
+        ElevenLabsVoice(voice_id: "pNInz6obpgDQGcFmaJgB", name: "Adam", category: "Premade", description: "Deep male, American — default Jarvis feel"),
+        ElevenLabsVoice(voice_id: "ErXwobaYiN019PkySvjV", name: "Antoni", category: "Premade", description: "Well-rounded male, American"),
+        ElevenLabsVoice(voice_id: "VR6AewLTigWG4xSOukaG", name: "Arnold", category: "Premade", description: "Crisp male, American"),
+        ElevenLabsVoice(voice_id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", category: "Premade", description: "Soft female, American"),
+        ElevenLabsVoice(voice_id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", category: "Premade", description: "Strong female, American"),
+        ElevenLabsVoice(voice_id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli", category: "Premade", description: "Emotional female, American"),
+        ElevenLabsVoice(voice_id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", category: "Premade", description: "Deep male, American"),
+        ElevenLabsVoice(voice_id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", category: "Premade", description: "Calm female, American — narration"),
+        ElevenLabsVoice(voice_id: "yoZ06aMxZJJ28mfd3POQ", name: "Sam", category: "Premade", description: "Raspy male, American"),
+        ElevenLabsVoice(voice_id: "LZAcK8Cx5QjdQhfBsJQZ", name: "Udha Default", category: "Custom", description: "The voice shipped with Udha")
+    ]
 }
