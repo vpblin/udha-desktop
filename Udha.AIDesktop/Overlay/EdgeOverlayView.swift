@@ -26,8 +26,8 @@ struct EdgeOverlayView: View {
             Color.clear
 
             if isExpanded {
-                bloomDisc
-                    .transition(.opacity.combined(with: .scale(scale: 0.88, anchor: edge == .right ? .trailing : .leading)))
+                bloomStack
+                    .transition(.opacity.combined(with: .move(edge: edge == .right ? .trailing : .leading)))
             } else {
                 restingSpine
                     .transition(.opacity.combined(with: .move(edge: edge == .right ? .trailing : .leading)))
@@ -150,229 +150,82 @@ struct EdgeOverlayView: View {
             .allowsHitTesting(false)
     }
 
-    // MARK: - Bloomed disc
+    // MARK: - Bloomed vertical stack
 
-    private var bloomDisc: some View {
-        ZStack {
-            discBackground
-            sessionArc
-            centerBadge
-            footerControls
+    private var bloomStack: some View {
+        ZStack(alignment: .top) {
+            bloomBackground
+            VStack(spacing: 0) {
+                headerBar
+                Divider().background(OverlayTheme.hairline)
+                sessionList
+            }
         }
         .frame(width: panelSize.width, height: panelSize.height)
     }
 
-    private var discBackground: some View {
-        let geom = OverlayGeometry(edge: edge, panelSize: panelSize, nodeCount: sessions.count)
-        let discRadius: CGFloat = geom.nodeRadius + 72
-        let diameter = discRadius * 2
-        let center = geom.arcCenter
-        let tickRadius = geom.nodeRadius + 46
-        let rimLightGradient = AngularGradient(
-            colors: rimLightColors(),
-            center: .center,
-            startAngle: .degrees(edge == .right ? 90 : -90),
-            endAngle: .degrees(edge == .right ? 270 : 270)
-        )
-        return ZStack {
-            // Ambient halo — soft warm wash behind the disc.
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            OverlayTheme.amber.opacity(hasAttention ? 0.18 : 0.08),
-                            OverlayTheme.amber.opacity(0.0)
-                        ],
-                        center: .center,
-                        startRadius: discRadius * 0.4,
-                        endRadius: discRadius * 0.95
-                    )
-                )
-                .frame(width: diameter * 1.4, height: diameter * 1.4)
-                .blur(radius: 28)
-                .position(center)
-                .allowsHitTesting(false)
-
-            // Disc body — dense obsidian glass, now noticeably opaque.
-            Circle()
+    private var bloomBackground: some View {
+        ZStack {
+            Rectangle()
                 .fill(.regularMaterial)
-                .overlay(
-                    Circle().fill(
-                        RadialGradient(
-                            colors: [
-                                OverlayTheme.obsidianCore.opacity(0.98),
-                                OverlayTheme.obsidianCore,
-                                OverlayTheme.obsidianEdge
-                            ],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: discRadius
-                        )
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            OverlayTheme.obsidianCore.opacity(0.95),
+                            OverlayTheme.obsidianEdge.opacity(0.98)
+                        ],
+                        startPoint: .top, endPoint: .bottom
                     )
                 )
-                .frame(width: diameter, height: diameter)
-                .position(center)
-                .shadow(color: .black.opacity(0.65), radius: 50, x: edge == .right ? -16 : 16, y: 18)
-
-            // Rim meniscus — two stacked strokes for a thicker, more luminous edge.
-            Circle()
-                .strokeBorder(rimLightGradient, lineWidth: 2.0)
-                .frame(width: diameter, height: diameter)
-                .position(center)
-                .blendMode(.screen)
-                .allowsHitTesting(false)
-
-            Circle()
-                .strokeBorder(OverlayTheme.hairlineStrong, lineWidth: 0.6)
-                .frame(width: diameter - 4, height: diameter - 4)
-                .position(center)
-                .allowsHitTesting(false)
-
-            // Concentric engraved guides — subtle mechanical detail.
-            Circle()
-                .stroke(OverlayTheme.hairline, lineWidth: 0.5)
-                .frame(width: (geom.nodeRadius + 8) * 2, height: (geom.nodeRadius + 8) * 2)
-                .position(center)
-            Circle()
-                .stroke(OverlayTheme.hairline.opacity(0.7), lineWidth: 0.5)
-                .frame(width: (geom.nodeRadius - 46) * 2, height: (geom.nodeRadius - 46) * 2)
-                .position(center)
-
-            // Deep drop shadow cast back toward the screen interior.
-            Circle()
-                .fill(Color.black.opacity(0.001))
-                .frame(width: diameter, height: diameter)
-                .position(center)
-                .shadow(color: .black.opacity(0.5), radius: 40, x: edge == .right ? -18 : 18, y: 14)
-                .allowsHitTesting(false)
-
-            // Tick marks — instrument-panel character around the rim.
-            TickMarkRing(
-                edge: edge,
-                center: center,
-                radius: tickRadius,
-                tickCount: 18,
-                activeTicks: activeTickIndices(),
-                marchPhase: marchPhase
-            )
-        }
-    }
-
-    /// Which tick indices should glow — derived from session positions so the
-    /// rim hints at where nodes will bloom.
-    private func activeTickIndices() -> Set<Int> {
-        let n = sessions.count
-        guard n > 0 else { return [] }
-        let total = 18
-        // Map each session onto the 11 middle ticks (skip first/last few).
-        let inset = 3
-        let range = total - inset * 2
-        var out = Set<Int>()
-        for i in 0..<n {
-            let slot = inset + Int(round(Double(i) / Double(max(n - 1, 1)) * Double(range - 1)))
-            out.insert(slot)
-        }
-        return out
-    }
-
-    /// Colors that make the visible (inward) side of the rim glow warm,
-    /// while the hidden side fades into the screen edge.
-    private func rimLightColors() -> [Color] {
-        let bright = hasAttention ? OverlayTheme.amberGlow : OverlayTheme.amber.opacity(0.85)
-        let mid    = OverlayTheme.hairlineStrong
-        let dim    = Color.black.opacity(0.4)
-        // For right edge, inward is left (180°). For left edge, inward is right (0°).
-        // AngularGradient starts at 0° (right) and sweeps clockwise.
-        if edge == .right {
-            return [dim, mid, bright, bright, mid, dim]
-        } else {
-            return [bright, mid, dim, dim, mid, bright]
-        }
-    }
-
-    /// Session nodes arranged on a parametric arc.
-    private var sessionArc: some View {
-        let geom = OverlayGeometry(edge: edge, panelSize: panelSize, nodeCount: sessions.count)
-        let radius = geom.nodeRadius
-        return ZStack {
-            ForEach(Array(sessions.enumerated()), id: \.element.id) { (idx, snap) in
-                let pos = geom.position(for: idx, radius: radius)
-                let lineCount = core.sessionManager.buffer(for: snap.id)?.count ?? 0
-                SessionNodeView(
-                    snapshot: snap,
-                    hovered: hoveredSessionID == snap.id,
-                    labelMode: config.config.overlay.labelMode,
-                    edge: edge,
-                    breath: breath,
-                    marchPhase: marchPhase,
-                    bufferLineCount: lineCount,
-                    autoApprove: config.config.sessions.first(where: { $0.id == snap.id })?.autoApprove ?? false,
-                    onHover: { hovering in handleHover(sessionID: snap.id, hovering: hovering) },
-                    onClick: { core.sessionManager.showSession(id: snap.id) },
-                    onToggleAutoApprove: {
-                        config.mutate { cfg in
-                            if let idx = cfg.sessions.firstIndex(where: { $0.id == snap.id }) {
-                                cfg.sessions[idx].autoApprove.toggle()
-                            }
-                        }
-                    },
-                    onRemove: { sessionPendingRemoval = snap }
-                )
-                .position(pos)
-                .transition(
-                    .asymmetric(
-                        insertion: .scale(scale: 0.1, anchor: .center)
-                            .combined(with: .opacity)
-                            .animation(OverlayTheme.nodeSpring.delay(Double(idx) * 0.04)),
-                        removal: .opacity
-                    )
-                )
+            // Hairline along the inward edge.
+            HStack {
+                if edge == .right {
+                    Rectangle()
+                        .fill(OverlayTheme.hairlineStrong)
+                        .frame(width: 0.6)
+                    Spacer()
+                } else {
+                    Spacer()
+                    Rectangle()
+                        .fill(OverlayTheme.hairlineStrong)
+                        .frame(width: 0.6)
+                }
             }
         }
+        .shadow(color: .black.opacity(0.5), radius: 22, x: edge == .right ? -10 : 10, y: 0)
+        .allowsHitTesting(false)
     }
 
-    private var centerBadge: some View {
-        let size: CGFloat = 72
-        // Inset slightly from the edge so the whole badge is visible.
-        let center = OverlayGeometry(edge: edge, panelSize: panelSize, nodeCount: 0).arcCenter
-        let inset: CGFloat = size / 2 + 6
-        let badgeCenter = CGPoint(
-            x: edge == .right ? center.x - inset : center.x + inset,
-            y: center.y
-        )
+    private var headerBar: some View {
         let activeCount = sessions.filter { $0.state == .working }.count
         let needsCount = sessions.filter { $0.state == .needsInput }.count
-        return ZStack {
-            // Bezeled pad.
-            Circle()
-                .fill(OverlayTheme.obsidianEdge)
-                .overlay(
-                    Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: [OverlayTheme.hairlineStrong, Color.black.opacity(0.6)],
-                                startPoint: .top, endPoint: .bottom
-                            ),
-                            lineWidth: 0.8
-                        )
-                )
-                .shadow(color: .black.opacity(0.5), radius: 8, y: 2)
-            VStack(spacing: 3) {
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("UDHA")
-                    .font(OverlayTheme.display(12, weight: .heavy))
-                    .tracking(3.0)
+                    .font(OverlayTheme.display(13, weight: .heavy))
+                    .tracking(2.5)
                     .foregroundStyle(OverlayTheme.amber)
-                Rectangle()
-                    .fill(OverlayTheme.hairlineStrong)
-                    .frame(width: 26, height: 0.5)
                 Text(statusReadout(active: activeCount, needs: needsCount))
                     .font(OverlayTheme.mono(10, weight: .bold))
-                    .tracking(0.6)
-                    .foregroundStyle(hasAttention ? OverlayTheme.amber : .white.opacity(0.78))
+                    .tracking(0.5)
+                    .foregroundStyle(hasAttention ? OverlayTheme.amber : .white.opacity(0.72))
             }
+            Spacer()
+            headerControl(
+                glyph: core.voice.isListening ? "mic.fill" : "mic",
+                tint: core.voice.isListening ? OverlayTheme.stateErrored : .white,
+                action: { core.voice.toggle() }
+            )
+            headerControl(glyph: "plus", tint: .white, action: openNewSession)
+            headerControl(glyph: "gearshape", tint: .white, action: openSettings)
         }
-        .frame(width: size, height: size)
-        .position(badgeCenter)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    private func headerControl(glyph: String, tint: Color, action: @escaping () -> Void) -> some View {
+        HeaderControlButton(glyph: glyph, tint: tint, action: action)
     }
 
     private func statusReadout(active: Int, needs: Int) -> String {
@@ -382,36 +235,53 @@ struct EdgeOverlayView: View {
         return "\(sessions.count) OK"
     }
 
-    private var footerControls: some View {
-        let geom = OverlayGeometry(edge: edge, panelSize: panelSize, nodeCount: 0)
-        let center = geom.arcCenter
-        // Sit directly under the UDHA badge — same x as the badge, just below it.
-        let badgeInset: CGFloat = 72 / 2 + 6
-        let trayX: CGFloat = edge == .right ? center.x - badgeInset : center.x + badgeInset
-        let trayY: CGFloat = center.y + 72 / 2 + 34
-        let items: [FooterControl] = [
-            FooterControl(
-                glyph: core.voice.isListening ? "mic.fill" : "mic",
-                action: { core.voice.toggle() },
-                tint: core.voice.isListening ? OverlayTheme.stateErrored : .white
-            ),
-            FooterControl(glyph: "plus", action: { openNewSession() }, tint: .white),
-            FooterControl(glyph: "gearshape", action: { openSettings() }, tint: .white)
-        ]
-        return HStack(spacing: 12) {
-            ForEach(Array(items.enumerated()), id: \.offset) { (_, item) in
-                FooterControlButton(item: item)
+    private var sessionList: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 4) {
+                ForEach(sessions) { snap in
+                    let lineCount = core.sessionManager.buffer(for: snap.id)?.count ?? 0
+                    SessionNodeView(
+                        snapshot: snap,
+                        hovered: hoveredSessionID == snap.id,
+                        labelMode: config.config.overlay.labelMode,
+                        edge: edge,
+                        breath: breath,
+                        marchPhase: marchPhase,
+                        bufferLineCount: lineCount,
+                        autoApprove: config.config.sessions.first(where: { $0.id == snap.id })?.autoApprove ?? false,
+                        onHover: { hovering in handleHover(sessionID: snap.id, hovering: hovering) },
+                        onClick: { core.sessionManager.showSession(id: snap.id) },
+                        onToggleAutoApprove: {
+                            config.mutate { cfg in
+                                if let idx = cfg.sessions.firstIndex(where: { $0.id == snap.id }) {
+                                    cfg.sessions[idx].autoApprove.toggle()
+                                }
+                            }
+                        },
+                        onRemove: { sessionPendingRemoval = snap }
+                    )
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.92)),
+                        removal: .opacity
+                    ))
+                }
+                if sessions.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "terminal")
+                            .font(.system(size: 28, weight: .light))
+                            .foregroundStyle(.white.opacity(0.35))
+                        Text("No sessions yet")
+                            .font(OverlayTheme.mono(11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                        Text("Tap + to add one.")
+                            .font(OverlayTheme.mono(10))
+                            .foregroundStyle(.white.opacity(0.4))
+                    }
+                    .padding(.top, 60)
+                }
             }
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(
-            Capsule()
-                .fill(OverlayTheme.obsidianEdge.opacity(0.9))
-                .overlay(Capsule().stroke(OverlayTheme.hairlineStrong, lineWidth: 0.6))
-        )
-        .shadow(color: .black.opacity(0.45), radius: 8, y: 3)
-        .position(x: trayX, y: trayY)
     }
 
     // MARK: - Interaction
@@ -525,20 +395,16 @@ private struct TickMarkRing: View {
     }
 }
 
-// MARK: - Footer button
+// MARK: - Header control button
 
-private struct FooterControl {
+private struct HeaderControlButton: View {
     let glyph: String
-    let action: () -> Void
     let tint: Color
-}
-
-private struct FooterControlButton: View {
-    let item: FooterControl
+    let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
-        Button(action: item.action) {
+        Button(action: action) {
             ZStack {
                 Circle()
                     .fill(OverlayTheme.obsidianCore)
@@ -547,11 +413,11 @@ private struct FooterControlButton: View {
                         lineWidth: 0.8
                     ))
                     .shadow(color: .black.opacity(0.4), radius: 4)
-                Image(systemName: item.glyph)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(hovering ? OverlayTheme.amber : item.tint.opacity(0.85))
+                Image(systemName: glyph)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(hovering ? OverlayTheme.amber : tint.opacity(0.9))
             }
-            .frame(width: 38, height: 38)
+            .frame(width: 32, height: 32)
             .scaleEffect(hovering ? 1.08 : 1.0)
             .animation(OverlayTheme.quickEase, value: hovering)
         }

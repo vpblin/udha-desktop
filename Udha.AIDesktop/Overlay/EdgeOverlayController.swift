@@ -78,7 +78,7 @@ final class EdgeOverlayController: NSObject {
     }
 
     private func panelFrame(for screen: NSScreen) -> NSRect {
-        let width: CGFloat = 460
+        let width: CGFloat = 300
         let visible = screen.visibleFrame
         guard let edge = core?.config.config.overlay.edge else {
             return NSRect(x: visible.maxX - width, y: visible.minY, width: width, height: visible.height)
@@ -95,18 +95,8 @@ final class EdgeOverlayController: NSObject {
         let edge = core?.config.config.overlay.edge ?? .right
         let trigger = CGFloat(core?.config.config.overlay.triggerWidth ?? 14)
         if state.isExpanded {
-            // Disc centered on the edge, radius ~ min(width * 0.95, height * 0.47)
-            // Use a tall rectangle covering roughly where the disc is visible.
-            let discReach: CGFloat = min(panelSize.width * 0.95, panelSize.height * 0.47)
-            let height = discReach * 2 + 40
-            let y = (panelSize.height - height) / 2
-            switch edge {
-            case .right:
-                let x = panelSize.width - discReach - 20
-                return CGRect(x: x, y: y, width: discReach + 30, height: height)
-            case .left:
-                return CGRect(x: -10, y: y, width: discReach + 30, height: height)
-            }
+            // Whole panel is interactive when bloomed — the vertical stack uses all of it.
+            return CGRect(origin: .zero, size: panelSize)
         } else {
             switch edge {
             case .right:
