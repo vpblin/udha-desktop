@@ -13,6 +13,7 @@ struct EdgeOverlayView: View {
     @State private var hoveredSessionID: UUID?
     @State private var breath: CGFloat = 0
     @State private var marchPhase: CGFloat = 0
+    @State private var sessionPendingRemoval: SessionSnapshot?
 
     private var edge: OverlayEdge { config.config.overlay.edge }
     private var triggerWidth: CGFloat { CGFloat(config.config.overlay.triggerWidth) }
@@ -35,6 +36,22 @@ struct EdgeOverlayView: View {
         .frame(width: panelSize.width, height: panelSize.height, alignment: edge == .right ? .trailing : .leading)
         .animation(OverlayTheme.bloomSpring, value: isExpanded)
         .animation(OverlayTheme.quickEase, value: hasAttention)
+        .confirmationDialog(
+            "Remove \(sessionPendingRemoval?.label ?? "session")?",
+            isPresented: Binding(
+                get: { sessionPendingRemoval != nil },
+                set: { if !$0 { sessionPendingRemoval = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: sessionPendingRemoval
+        ) { snap in
+            Button("Remove", role: .destructive) {
+                core.sessionManager.removeSession(id: snap.id)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { _ in
+            Text("This stops the tmux session and deletes the project from your config.")
+        }
         .onAppear {
             withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
                 breath = 1
@@ -298,7 +315,8 @@ struct EdgeOverlayView: View {
                                 cfg.sessions[idx].autoApprove.toggle()
                             }
                         }
-                    }
+                    },
+                    onRemove: { sessionPendingRemoval = snap }
                 )
                 .position(pos)
                 .transition(

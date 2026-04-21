@@ -12,16 +12,41 @@ struct SessionNodeView: View {
     let onHover: (Bool) -> Void
     let onClick: () -> Void
     let onToggleAutoApprove: () -> Void
+    let onRemove: () -> Void
 
     private let cardWidth: CGFloat = 224
     private let cardHeight: CGFloat = 82
 
     var body: some View {
-        card
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .onHover { onHover($0) }
-            .onTapGesture { onClick() }
-            .animation(OverlayTheme.quickEase, value: hovered)
+        ZStack(alignment: .topTrailing) {
+            card
+            if hovered { removeButton }
+        }
+        .frame(width: cardWidth + 24, height: cardHeight + 24)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onHover { onHover($0) }
+        .onTapGesture { onClick() }
+        .animation(OverlayTheme.quickEase, value: hovered)
+    }
+
+    private var removeButton: some View {
+        Button(action: onRemove) {
+            Image(systemName: "xmark")
+                .font(.system(size: 9, weight: .heavy))
+                .foregroundStyle(.white.opacity(0.92))
+                .frame(width: 18, height: 18)
+                .background(
+                    Circle()
+                        .fill(OverlayTheme.stateErrored.opacity(0.85))
+                        .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 0.6))
+                )
+                .shadow(color: .black.opacity(0.5), radius: 3, y: 1)
+        }
+        .buttonStyle(.plain)
+        .help("Remove this session")
+        .padding(.top, 6)
+        .padding(.trailing, 6)
+        .transition(.scale(scale: 0.7).combined(with: .opacity))
     }
 
     // MARK: - Card
