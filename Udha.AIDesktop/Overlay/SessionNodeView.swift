@@ -14,8 +14,8 @@ struct SessionNodeView: View {
     let onToggleAutoApprove: () -> Void
     let onRemove: () -> Void
 
-    private let cardWidth: CGFloat = 224
-    private let cardHeight: CGFloat = 82
+    private let cardWidth: CGFloat = 248
+    private let cardHeight: CGFloat = 90
 
     var body: some View {
         card
@@ -100,18 +100,14 @@ struct SessionNodeView: View {
     }
 
     private func topRow(color: Color) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             stateDot(color: color)
             Text(snapshot.label)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: 4)
-            autoApproveButton
-            Text(elapsedReadout)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.55))
         }
         .padding(.trailing, 22) // reserve space for the × remove button
     }
@@ -141,7 +137,7 @@ struct SessionNodeView: View {
     private func stateRow(color: Color) -> some View {
         HStack(spacing: 6) {
             Text(stateLabel)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(color)
             if let activity = activityText {
                 Circle()
@@ -153,7 +149,11 @@ struct SessionNodeView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
+            autoApproveButton
+            Text(elapsedReadout)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.55))
         }
     }
 
